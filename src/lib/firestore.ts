@@ -1,23 +1,36 @@
 // src/lib/firestore.ts
 import { db } from './firebase';
-import { collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, query, where } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, query, where, DocumentData } from 'firebase/firestore';
 import type { Outlet } from './types'; // Assuming types.ts defines Outlet
 
-const outletsCollectionRef = collection(db, 'outlets');
+function getFirestoreDB() {
+  if (!db) {
+    throw new Error('Firestore DB not initialized. Ensure Firebase is configured and running.');
+  }
+  return db;
+}
+
+// Helper to convert Firestore DocumentData to Outlet type, ensuring 'id' is present
+const docToOutlet = (doc: DocumentData): Outlet => {
+  return { ...doc.data(), id: doc.id } as Outlet;
+}
 
 // Get all outlets
 export async function getOutlets(): Promise<Outlet[]> {
+  const firestoreDb = getFirestoreDB();
+  const outletsCollectionRef = collection(firestoreDb, 'outlets');
   const q = query(outletsCollectionRef);
   const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Outlet));
+  return querySnapshot.docs.map(docToOutlet);
 }
 
 // Get a single outlet by ID
 export async function getOutletById(id: string): Promise<Outlet | null> {
-  const docRef = doc(db, 'outlets', id);
+  const firestoreDb = getFirestoreDB();
+  const docRef = doc(firestoreDb, 'outlets', id);
   const docSnap = await getDoc(docRef);
   if (docSnap.exists()) {
-    return { ...docSnap.data(), id: docSnap.id } as Outlet;
+    return docToOutlet(docSnap);
   } else {
     return null;
   }
@@ -25,6 +38,8 @@ export async function getOutletById(id: string): Promise<Outlet | null> {
 
 // Add a new outlet
 export async function addOutlet(outletData: Omit<Outlet, 'id'>): Promise<Outlet> {
+  const firestoreDb = getFirestoreDB();
+  const outletsCollectionRef = collection(firestoreDb, 'outlets');
   const newDocRef = doc(outletsCollectionRef);
   await setDoc(newDocRef, outletData);
   return { id: newDocRef.id, ...outletData } as Outlet;
@@ -32,12 +47,14 @@ export async function addOutlet(outletData: Omit<Outlet, 'id'>): Promise<Outlet>
 
 // Update an existing outlet
 export async function updateOutlet(id: string, newData: Partial<Outlet>): Promise<void> {
-  const docRef = doc(db, 'outlets', id);
+  const firestoreDb = getFirestoreDB();
+  const docRef = doc(firestoreDb, 'outlets', id);
   await updateDoc(docRef, newData);
 }
 
 // Delete an outlet
 export async function deleteOutlet(id: string): Promise<void> {
-  const docRef = doc(db, 'outlets', id);
+  const firestoreDb = getFirestoreDB();
+  const docRef = doc(firestoreDb, 'outlets', id);
   await deleteDoc(docRef);
 }

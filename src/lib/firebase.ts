@@ -15,10 +15,28 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+let app;
+if (typeof window !== 'undefined' && !getApps().length) {
+  app = initializeApp(firebaseConfig);
+} else if (getApps().length) {
+  app = getApp();
+} else {
+  // During SSR or build, we might not initialize the client-side Firebase app
+  // if not explicitly needed, or handle it differently.
+  // For now, if no window object and no existing apps, we'll avoid init.
+  // This helps prevent issues during Next.js build.
+  // A robust solution might involve passing a separate admin app or
+  // handling server-side data fetching without client-side SDK init here.
+  console.warn("Firebase client-side app not initialized (likely SSR/Build).");
+}
 
-// Export Firebase services
-const auth = getAuth(app);
-const db = getFirestore(app);
+// Export Firebase services (conditionally initialize auth and db)
+let auth = null;
+let db = null;
+
+if (app) {
+  auth = getAuth(app);
+  db = getFirestore(app);
+}
 
 export { app, auth, db };
