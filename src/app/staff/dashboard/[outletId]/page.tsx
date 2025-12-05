@@ -1,18 +1,8 @@
-// src/app/staff/dashboard/[outletId]/page.tsx
-
 // --- Type Definitions ---
 type OutletParams = {
   // This key must match the folder name: [outletId]
   outletId: string;
 };
-
-// Define the precise structure of the props passed to the Page component
-interface OutletPageProps {
-    params: OutletParams;
-    // App Router pages may also receive searchParams
-    searchParams?: { [key: string]: string | string[] | undefined };
-}
-
 
 // --- 1. generateStaticParams (Addresses the initial build error for static export) ---
 
@@ -21,12 +11,13 @@ interface OutletPageProps {
  * for static pre-rendering at build time.
  */
 export async function generateStaticParams(): Promise<OutletParams[]> {
-    // ⚠️ IMPORTANT: Verify that process.env.API_URL is correctly set up as a BUILD-TIME variable.
+    // ⚠️ IMPORTANT: Verify that process.env.API_URL is correctly set up as a BUILD-TIME variable 
+    // in your GitHub Actions environment secrets/vars.
     const apiUrl = `${process.env.API_URL}/outlets`;
     
     try {
         const res = await fetch(apiUrl, {
-             // Added timeout for robust build process
+            // Added timeout for robust build process
             signal: AbortSignal.timeout(5000) 
         });
 
@@ -36,6 +27,7 @@ export async function generateStaticParams(): Promise<OutletParams[]> {
             throw new Error(`API fetch failed (Status ${res.status}) for ${apiUrl}. Response: ${errorText}`);
         }
 
+        // Assuming your API returns an array of objects, each having an 'id' property.
         const outlets: { id: number | string }[] = await res.json();
         
         return outlets.map(o => ({
@@ -51,18 +43,22 @@ export async function generateStaticParams(): Promise<OutletParams[]> {
 }
 
 
-// --- 2. OutletPage Component (Addresses the "Type error" by using correct typing) ---
+// --- 2. OutletPage Component (Addresses the "Type error" by using simplified, inline typing) ---
 
 /**
  * The main Page component for the dynamic route.
- * It is an Async Server Component.
+ * We use inline typing here to specifically avoid conflicts with external 'PageProps' definitions.
  */
-export default async function OutletPage({ params }: OutletPageProps) {
-    // TypeScript now correctly validates 'params' against OutletPageProps interface.
+export default async function OutletPage({ 
+    params,
+    // Note: TypeScript correctly infers the type of searchParams from the object literal.
+}: { 
+    params: OutletParams;
+    searchParams?: { [key: string]: string | string[] | undefined };
+}) {
     const { outletId } = params;
     
-    // --- Page-specific data fetching (Runs at build time for pre-rendered pages) ---
-    // In a real app, you'd fetch the specific data for this outletId here.
+    // --- Page-specific data fetching ---
     const outletData = await getOutletData(outletId);
 
 
@@ -80,7 +76,6 @@ export default async function OutletPage({ params }: OutletPageProps) {
             <h1>Dashboard for Outlet: {outletData.name} (ID: {outletId})</h1>
             <p>Welcome to the dashboard.</p>
             
-            {/* Display data for confirmation */}
             <pre>{JSON.stringify(outletData, null, 2)}</pre>
         </main>
     );
@@ -97,7 +92,6 @@ async function getOutletData(outletId: string): Promise<{ name: string } | null>
         
         if (!res.ok) return null;
 
-        // Mocking the expected return shape for the component to function
         const data = await res.json();
         return data.name ? data : { name: `Fallback Outlet Name ${outletId}` };
 
