@@ -103,27 +103,6 @@ export default function CartPage() {
                 <p>Grand Total</p>
                 <p>₹{(cartTotal * 1.05).toFixed(2)}</p>
               </div>
-              <Separator />
-              <div className="space-y-2">
-                <Button onClick={handlePredictWaitTime} disabled={isPredicting} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
-                  {isPredicting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
-                  Predict Wait Time with AI
-                </Button>
-                {prediction && (
-                    <Alert>
-                        <Info className="h-4 w-4" />
-                        <AlertTitle>AI Prediction: ~{prediction.estimatedWaitTime} minutes</AlertTitle>
-                        <AlertDescription className="text-xs">{prediction.reasoning}</AlertDescription>
-                    </Alert>
-                )}
-                {predictionError && (
-                    <Alert variant="destructive">
-                        <Info className="h-4 w-4" />
-                        <AlertTitle>Prediction Failed</AlertTitle>
-                        <AlertDescription className="text-xs">{predictionError}</AlertDescription>
-                    </Alert>
-                )}
-              </div>
             </CardContent>
             <CardFooter>
               <Button size="lg" className="w-full" onClick={handlePlaceOrder}>
