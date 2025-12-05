@@ -1,37 +1,39 @@
-// --- Type Definitions ---
-type OutletParams = {
-  // This key must match the folder name: [outletId]
-  outletId: string;
-};
+// app/staff/dashboard/[outletId]/page.js
 
-// --- 1. generateStaticParams (Addresses the initial build error for static export) ---
+// --- Type Definitions (informational only) ---
+// outletId is a dynamic route param (folder name: [outletId])
 
 /**
- * Required for `output: "export"`. Must provide a list of all possible 'outletId' values 
- * for static pre-rendering at build time.
+ * generateStaticParams
+ * - validates API_URL
+ * - optionally skips network fetch when SKIP_STATIC_FETCH=true (useful for CI)
+ * - returns [{ outletId: '1' }, ...]
  */
-// app/staff/dashboard/[outletId]/page.js (only include the function part if file already exists)
 export async function generateStaticParams() {
   const API_BASE = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL;
   const SKIP_STATIC_FETCH = process.env.SKIP_STATIC_FETCH === 'true';
 
   if (!API_BASE) {
     throw new Error(
-      'Missing API_URL environment variable needed for static generation. ' +
+      'Missing API_URL environment variable required for static generation. ' +
         'Set API_URL (e.g. "https://api.example.com") in your environment or CI secrets.'
     );
   }
 
+  // validate API_BASE is a proper absolute URL
   let outletsUrl;
   try {
     outletsUrl = new URL('/outlets', API_BASE).toString();
   } catch (err) {
     throw new Error(
-      `Invalid API_URL value (${API_BASE}) — it must be an absolute URL including protocol (e.g. "https://api.example.com").\nCaused by: ${err}`
+      `Invalid API_URL value (${API_BASE}). It must be an absolute URL including protocol (e.g. "https://api.example.com").\nCaused by: ${err}`
     );
   }
 
   if (SKIP_STATIC_FETCH) {
+    // Skip network fetch in CI or when API is not reachable.
+    // Returning [] will skip generating outlet pages at build time.
+    // Change to a small fallback array if you need some pages generated.
     console.warn('SKIP_STATIC_FETCH=true: skipping network fetch for generateStaticParams');
     return [];
   }
@@ -42,69 +44,95 @@ export async function generateStaticParams() {
   }
 
   const outlets = await res.json();
-
   if (!Array.isArray(outlets)) {
-    throw new Error(`Unexpected response shape from ${outletsUrl}: expected an array, got ${typeof outlets}`);
+    throw new Error(`Unexpected response shape from ${outletsUrl}: expected an array of outlets`);
   }
 
   return outlets.map((o) => ({ outletId: String(o.id) }));
 }
 
-
-
-// --- 2. OutletPage Component (Addresses the "Type error" by using simplified, inline typing) ---
-
 /**
- * The main Page component for the dynamic route.
- * We use inline typing here to specifically avoid conflicts with external 'PageProps' definitions.
+ * OutletPage (server component)
+ * - fetches outlet details using a validated API base
+ * - renders fallback UI when data is missing
  */
-export default async function OutletPage({ 
-    params,
-    // Note: TypeScript correctly infers the type of searchParams from the object literal.
-}: { 
-    params: OutletParams;
-    searchParams?: { [key: string]: string | string[] | undefined };
+export default async function OutletPage({
+  params,
+  // searchParams optional
 }) {
-    const { outletId } = params;
-    
-    // --- Page-specific data fetching ---
-    const outletData = await getOutletData(outletId);
+  const { outletId } = params || {};
 
-
-    if (!outletData) {
-        return (
-            <main>
-                <h1>Outlet Data Not Found</h1>
-                <p>Could not load details for Outlet ID: {outletId}</p>
-            </main>
-        );
-    }
-
+  if (!outletId) {
     return (
-        <main>
-            <h1>Dashboard for Outlet: {outletData.name} (ID: {outletId})</h1>
-            <p>Welcome to the dashboard.</p>
-            
-            <pre>{JSON.stringify(outletData, null, 2)}</pre>
-        </main>
+      <main>
+        <h1>Invalid Request</h1>
+        <p>No outletId provided in route params.</p>
+      </main>
     );
+  }
+
+  const outletData = await getOutletData(outletId);
+
+  if (!outletData) {
+    return (
+      <main>
+        <h1>Outlet Data Not Found</h1>
+        <p>Could not load details for Outlet ID: {outletId}</p>
+      </main>
+    );
+  }
+
+  return (
+    <main>
+      <h1>Dashboard for Outlet: {outletData.name} (ID: {outletId})</h1>
+      <p>Welcome to the dashboard.</p>
+
+      <pre style={{ whiteSpace: 'pre-wrap' }}>{JSON.stringify(outletData, null, 2)}</pre>
+    </main>
+  );
 }
 
+/**
+ * getOutletData
+ * - constructs absolute URL via new URL()
+ * - validates API_BASE
+ * - returns data object or null on error
+ */
+async function getOutletData(outletId) {
+  const API_BASE = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL;
+  if (!API_BASE) {
+    // Avoid throwing here so page can show friendly fallback; build-time will fail earlier in generateStaticParams
+    console.error('getOutletData: missing API_URL; set process.env.API_URL');
+    return null;
+  }
 
-// --- Helper Function ---
-async function getOutletData(outletId: string): Promise<{ name: string } | null> {
-    const apiUrl = `${process.env.API_URL}/outlets/${outletId}`;
-    try {
-        const res = await fetch(apiUrl, { 
-            next: { revalidate: 3600 } 
-        }); 
-        
-        if (!res.ok) return null;
+  let endpoint;
+  try {
+    endpoint = new URL(`/outlets/${encodeURIComponent(outletId)}`, API_BASE).toString();
+  } catch (err) {
+    console.error('getOutletData: invalid API_URL:', API_BASE, err);
+    return null;
+  }
 
-        const data = await res.json();
-        return data.name ? data : { name: `Fallback Outlet Name ${outletId}` };
-
-    } catch (e) {
-        return null;
+  try {
+    const res = await fetch(endpoint, { next: { revalidate: 3600 } });
+    if (!res.ok) {
+      console.error(`getOutletData: fetch failed ${res.status} ${res.statusText} for ${endpoint}`);
+      return null;
     }
+
+    const data = await res.json();
+    // simple validation
+    if (!data || typeof data !== 'object') {
+      console.error('getOutletData: unexpected response shape', data);
+      return null;
+    }
+
+    // ensure a name exists; otherwise provide a fallback structure
+    if (!data.name) data.name = `Outlet ${outletId}`;
+    return data;
+  } catch (err) {
+    console.error('getOutletData: network/error', err);
+    return null;
+  }
 }
