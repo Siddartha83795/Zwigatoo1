@@ -1,0 +1,88 @@
+{
+  "placeholderImages": [
+    {
+      "id": "hero-background",
+      "description": "A vibrant image of a modern cafeteria or a delicious spread of food.",
+      "imageUrl": "https://images.unsplash.com/photo-1628627582892-a7736b5be159?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxmb29kJTIwY2FmZXRlcmlhfGVufDB8fHx8MTc2Mjg0MTA4Nnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "food cafeteria"
+    },
+    {
+      "id": "outlet-medical-cafeteria",
+      "description": "The storefront of Medical Cafeteria.",
+      "imageUrl": "https://images.unsplash.com/photo-1710846929339-72634edf6f5f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxyZXN0YXVyYW50JTIwZXh0ZXJpb3J8ZW58MHx8fHwxNzYyODI3MDA3fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "restaurant exterior"
+    },
+    {
+      "id": "outlet-bits-bites",
+      "description": "The storefront of Bits & Bites.",
+      "imageUrl": "https://images.unsplash.com/photo-1731758832047-8363e8eed735?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxjYWZlJTIwc3RvcmVmcm9udHxlbnwwfHx8fDE3NjI4NDEwODd8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "cafe storefront"
+    },
+    {
+      "id": "item-chole-bhature",
+      "description": "A plate of Chole Bhature.",
+      "imageUrl": "https://images.unsplash.com/photo-1672561924208-7762120e7077?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxjaG9sZSUyMGJoYXR1cmV8ZW58MHx8fHwxNzYyODQxMDg2fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "chole bhature"
+    },
+    {
+      "id": "item-masala-dosa",
+      "description": "A Masala Dosa.",
+      "imageUrl": "https://images.unsplash.com/photo-1743615467363-250466982515?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxtYXNhbGElMjBkb3NhfGVufDB8fHx8MTc2Mjc5MjgwOXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "masala dosa"
+    },
+    {
+      "id": "item-paneer-tikka",
+      "description": "Paneer Tikka skewers.",
+      "imageUrl": "https://images.unsplash.com/photo-1701579231378-3726490a407b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxwYW5lZXIlMjB0aWtrYXxlbnwwfHx8fDE3NjI3Njk4MjV8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "paneer tikka"
+    },
+    {
+      "id": "item-veg-biryani",
+      "description": "A bowl of Vegetable Biryani.",
+      "imageUrl": "https://images.unsplash.com/photo-1737210235283-7675f83efc59?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHx2ZWdldGFibGUlMjBiaXJ5YW5pfGVufDB8fHx8MTc2Mjc2OTgyNXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "vegetable biryani"
+    },
+    {
+      "id": "item-samosa",
+      "description": "Two crispy samosas.",
+      "imageUrl": "https://images.unsplash.com/photo-1666190091090-1d312a4b04c2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxzYW1vc2F8ZW58MHx8fHwxNzYyODQxMDg2fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "samosa"
+    },
+    {
+      "id": "item-filter-coffee",
+      "description": "A cup of south indian filter coffee.",
+      "imageUrl": "https://images.unsplash.com/photo-1699179584541-ce1170753afe?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxmaWx0ZXIlMjBjb2ZmZWV8ZW58MHx8fHwxNzYyODQxMDg2fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "filter coffee"
+    },
+    {
+      "id": "item-fresh-lime-soda",
+      "description": "A glass of fresh lime soda.",
+      "imageUrl": "https://images.unsplash.com/photo-1617984372296-3168534ca0f2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxsaW1lJTIwc29kYXxlbnwwfHx8fDE3NjI3ODIyMzZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "lime soda"
+    },
+    {
+      "id": "item-club-sandwich",
+      "description": "A club sandwich with fries.",
+      "imageUrl": "https://images.unsplash.com/photo-1567234669003-dce7a7a88821?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxjbHViJTIwc2FuZHdpY2h8ZW58MHx8fHwxNzYyNzYxMjE2fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "club sandwich"
+    },
+    {
+      "id": "item-veg-hakka-noodles",
+      "description": "A bowl of vegetable hakka noodles.",
+      "imageUrl": "https://images.unsplash.com/photo-1601565960311-8a7f4e1ab709?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxoYWtrYSUyMG5vb2RsZXN8ZW58MHx8fHwxNzYyODM4NTkzfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "hakka noodles"
+    },
+    {
+      "id": "item-chilli-paneer",
+      "description": "A bowl of chilli paneer.",
+      "imageUrl": "https://images.unsplash.com/photo-1582451854057-78add2e8bf37?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxjaGlsbGklMjBwYW5lZXJ8ZW58MHx8fHwxNzYyODQxMDg2fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "chilli paneer"
+    },
+    {
+      "id": "item-coke",
+      "description": "A can of Coca-Cola.",
+      "imageUrl": "https://images.unsplash.com/photo-1554866585-cd94860890b7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxjb2NhJTIwY29sYXxlbnwwfHx8fDE3NjI3NzkwMjJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "coca cola"
+    }
+  ]
+}
