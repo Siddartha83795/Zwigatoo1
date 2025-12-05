@@ -10,37 +10,46 @@ type OutletParams = {
  * Required for `output: "export"`. Must provide a list of all possible 'outletId' values 
  * for static pre-rendering at build time.
  */
-export async function generateStaticParams(): Promise<OutletParams[]> {
-    // ⚠️ IMPORTANT: Verify that process.env.API_URL is correctly set up as a BUILD-TIME variable 
-    // in your GitHub Actions environment secrets/vars.
-    const apiUrl = `${process.env.API_URL}/outlets`;
-    
-    try {
-        const res = await fetch(apiUrl, {
-            // Added timeout for robust build process
-            signal: AbortSignal.timeout(5000) 
-        });
+// app/staff/dashboard/[outletId]/page.js (only include the function part if file already exists)
+export async function generateStaticParams() {
+  const API_BASE = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL;
+  const SKIP_STATIC_FETCH = process.env.SKIP_STATIC_FETCH === 'true';
 
-        if (!res.ok) {
-            const errorText = await res.text();
-            // Throw a descriptive error to halt the build and indicate the API failure
-            throw new Error(`API fetch failed (Status ${res.status}) for ${apiUrl}. Response: ${errorText}`);
-        }
+  if (!API_BASE) {
+    throw new Error(
+      'Missing API_URL environment variable needed for static generation. ' +
+        'Set API_URL (e.g. "https://api.example.com") in your environment or CI secrets.'
+    );
+  }
 
-        // Assuming your API returns an array of objects, each having an 'id' property.
-        const outlets: { id: number | string }[] = await res.json();
-        
-        return outlets.map(o => ({
-            outletId: String(o.id),
-        }));
-        
-    } catch (error) {
-        console.error(`--- BUILD FAILURE: generateStaticParams failed ---`);
-        console.error("Details:", error);
-        // Re-throw to ensure the build fails if static data cannot be retrieved
-        throw new Error('Static paths generation failed. Check API_URL and network access.');
-    }
+  let outletsUrl;
+  try {
+    outletsUrl = new URL('/outlets', API_BASE).toString();
+  } catch (err) {
+    throw new Error(
+      `Invalid API_URL value (${API_BASE}) — it must be an absolute URL including protocol (e.g. "https://api.example.com").\nCaused by: ${err}`
+    );
+  }
+
+  if (SKIP_STATIC_FETCH) {
+    console.warn('SKIP_STATIC_FETCH=true: skipping network fetch for generateStaticParams');
+    return [];
+  }
+
+  const res = await fetch(outletsUrl, { cache: 'no-store' });
+  if (!res.ok) {
+    throw new Error(`Failed to fetch outlets from ${outletsUrl}: ${res.status} ${res.statusText}`);
+  }
+
+  const outlets = await res.json();
+
+  if (!Array.isArray(outlets)) {
+    throw new Error(`Unexpected response shape from ${outletsUrl}: expected an array, got ${typeof outlets}`);
+  }
+
+  return outlets.map((o) => ({ outletId: String(o.id) }));
 }
+
 
 
 // --- 2. OutletPage Component (Addresses the "Type error" by using simplified, inline typing) ---
