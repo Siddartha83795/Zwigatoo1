@@ -1,3 +1,5 @@
+import { getOutletById } from '@/lib/firestore'; // Import getOutletById
+
 // app/staff/dashboard/[outletId]/page.js
 
 // --- Type Definitions (informational only) ---
@@ -74,7 +76,7 @@ export default async function OutletPage({
     );
   }
 
-  const outletData = await getOutletData(outletId);
+  const outletData = await getOutletById(outletId);
 
   if (!outletData) {
     return (
@@ -93,49 +95,4 @@ export default async function OutletPage({
       <pre style={{ whiteSpace: 'pre-wrap' }}>{JSON.stringify(outletData, null, 2)}</pre>
     </main>
   );
-}
-
-/**
- * getOutletData
- * - constructs absolute URL via new URL()
- * - validates API_BASE
- * - returns data object or null on error
- */
-async function getOutletData(outletId: string) {
-  const API_BASE = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL;
-  if (!API_BASE) {
-    // Avoid throwing here so page can show friendly fallback; build-time will fail earlier in generateStaticParams
-    console.error('getOutletData: missing API_URL; set process.env.API_URL');
-    return null;
-  }
-
-  let endpoint;
-  try {
-    endpoint = new URL(`/outlets/${encodeURIComponent(outletId)}`, API_BASE).toString();
-  } catch (err) {
-    console.error('getOutletData: invalid API_URL:', API_BASE, err);
-    return null;
-  }
-
-  try {
-    const res = await fetch(endpoint, { next: { revalidate: 3600 } });
-    if (!res.ok) {
-      console.error(`getOutletData: fetch failed ${res.status} ${res.statusText} for ${endpoint}`);
-      return null;
-    }
-
-    const data = await res.json();
-    // simple validation
-    if (!data || typeof data !== 'object') {
-      console.error('getOutletData: unexpected response shape', data);
-      return null;
-    }
-
-    // ensure a name exists; otherwise provide a fallback structure
-    if (!data.name) data.name = `Outlet ${outletId}`;
-    return data;
-  } catch (err) {
-    console.error('getOutletData: network/error', err);
-    return null;
-  }
 }

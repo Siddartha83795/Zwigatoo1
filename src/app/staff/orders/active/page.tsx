@@ -1,12 +1,13 @@
 'use client';
 
 import { notFound } from 'next/navigation';
-import { outlets, orders as mockOrdersData } from '@/lib/data';
+import { orders as mockOrdersData } from '@/lib/data'; // Keep mockOrdersData for now
 import OrderCard from '@/components/order-card';
-import type { Order, OrderStatus } from '@/lib/types';
+import type { Order, OrderStatus, Outlet } from '@/lib/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { getOutlets } from '@/lib/firestore'; // Import getOutlets
 
 type StatusColumn = {
     title: string;
@@ -20,8 +21,26 @@ const columns: StatusColumn[] = [
 ];
 
 export default function ActiveOrdersPage() {
-  const [orders, setOrders] = useState<Order[]>(mockOrdersData);
+  const [orders, setOrders] = useState<Order[]>(mockOrdersData); // Still using mock data for orders
+  const [outlets, setOutlets] = useState<Outlet[]>([]);
   const [selectedOutletId, setSelectedOutletId] = useState<string>('all');
+  const [loadingOutlets, setLoadingOutlets] = useState(true);
+  const [errorOutlets, setErrorOutlets] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchOutlets = async () => {
+      try {
+        const fetchedOutlets = await getOutlets();
+        setOutlets(fetchedOutlets);
+      } catch (err: any) {
+        console.error("Error fetching outlets:", err);
+        setErrorOutlets("Failed to load outlets.");
+      } finally {
+        setLoadingOutlets(false);
+      }
+    };
+    fetchOutlets();
+  }, []);
 
   const filteredOrders = useMemo(() => {
     if (selectedOutletId === 'all') {
@@ -47,9 +66,15 @@ export default function ActiveOrdersPage() {
                 <p className="text-muted-foreground">Live view of all ongoing orders.</p>
              </div>
              <div className="w-full max-w-xs">
-                <Select value={selectedOutletId} onValueChange={setSelectedOutletId}>
+                <Select value={selectedOutletId} onValueChange={setSelectedOutletId} disabled={loadingOutlets || !!errorOutlets}>
                     <SelectTrigger>
-                        <SelectValue placeholder="Filter by outlet" />
+                        {loadingOutlets ? (
+                            <SelectValue placeholder="Loading outlets..." />
+                        ) : errorOutlets ? (
+                            <SelectValue placeholder={errorOutlets} />
+                        ) : (
+                            <SelectValue placeholder="Filter by outlet" />
+                        )}
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">All Outlets</SelectItem>

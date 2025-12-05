@@ -1,25 +1,68 @@
 'use client';
 
-import { useEffect, useMemo, use } from 'react';
+import { useEffect, useState } from 'react';
 import { notFound } from 'next/navigation';
-import { outlets, menuItems as allMenuItems } from '@/lib/data';
+import { menuItems as allMenuItems } from '@/lib/data'; // Keep mockMenuItems for now
 import MenuItemCard from '@/components/menu-item-card';
 import { useCart } from '@/context/cart-context';
 import CartWidget from '@/components/cart-widget';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import BackButton from '@/components/back-button';
+import { getOutletById } from '@/lib/firestore'; // Import getOutletById
+import type { Outlet } from '@/lib/types'; // Import Outlet type
 
-export default function MenuPage({ params: paramsPromise }: { params: Promise<{ outletId: string }> }) {
-  const params = use(paramsPromise);
+
+export default function MenuPage({ params }: { params: { outletId: string } }) {
   const { setOutletId } = useCart();
-  const outlet = useMemo(() => outlets.find(o => o.id === params.outletId), [params.outletId]);
-  
+  const [outlet, setOutlet] = useState<Outlet | null>(null);
+  const [loadingOutlet, setLoadingOutlet] = useState(true);
+  const [errorOutlet, setErrorOutlet] = useState<string | null>(null);
+
   useEffect(() => {
-    if(outlet) {
-      setOutletId(outlet.id);
-    }
-  }, [outlet, setOutletId]);
+    const fetchOutlet = async () => {
+      try {
+        const fetchedOutlet = await getOutletById(params.outletId);
+        setOutlet(fetchedOutlet);
+        if (fetchedOutlet) {
+            setOutletId(fetchedOutlet.id);
+        }
+      } catch (err: any) {
+        console.error("Error fetching outlet:", err);
+        setErrorOutlet("Failed to load outlet details.");
+      } finally {
+        setLoadingOutlet(false);
+      }
+    };
+    fetchOutlet();
+  }, [params.outletId, setOutletId]);
+
+
+  if (loadingOutlet) {
+    return (
+        <div className="container py-12 text-center">
+            <h1 className="text-4xl font-bold font-headline tracking-tight text-foreground sm:text-5xl">
+            Loading Outlet...
+            </h1>
+            <p className="mt-4 text-lg text-muted-foreground">
+            Please wait while we fetch the cafeteria details.
+            </p>
+        </div>
+    );
+  }
+
+  if (errorOutlet) {
+    return (
+        <div className="container py-12 text-center">
+            <h1 className="text-4xl font-bold font-headline tracking-tight text-destructive sm:text-5xl">
+            Error
+            </h1>
+            <p className="mt-4 text-lg text-muted-foreground">
+            {errorOutlet} Please try again later.
+            </p>
+        </div>
+    );
+  }
 
   if (!outlet) {
     notFound();

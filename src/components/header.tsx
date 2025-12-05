@@ -19,7 +19,8 @@ import { useCart } from '@/context/cart-context';
 import { ThemeToggle } from './theme-toggle';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { outlets } from '@/lib/data';
+import { getOutlets } from '@/lib/firestore'; // Import getOutlets
+import type { Outlet } from '@/lib/types'; // Import Outlet type
 
 
 const clientNavLinks = [
@@ -38,18 +39,25 @@ export default function Header() {
   const [isMounted, setIsMounted] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [outlets, setOutlets] = useState<Outlet[]>([]);
   const pathname = usePathname();
   const router = useRouter();
   
   useEffect(() => {
     setIsMounted(true);
-    setIsLoggedIn(localStorage.getItem('isLoggedIn') === 'true');
-    setUserRole(localStorage.getItem('userRole'));
+    setIsLoggedIn(localStorage.getItem('isLoggedIn') === 'true'); // Temporarily kept for client-side redirection, should be replaced with actual auth status
+    setUserRole(localStorage.getItem('userRole')); // Temporarily kept for client-side redirection, should be replaced with actual auth status
+
+    const fetchOutlets = async () => {
+        const fetchedOutlets = await getOutlets();
+        setOutlets(fetchedOutlets);
+    }
+    fetchOutlets();
   }, [pathname]);
 
   const handleLogout = () => {
-    localStorage.removeItem('isLoggedIn');
-    localStorage.removeItem('userRole');
+    localStorage.removeItem('isLoggedIn'); // Temporarily kept for client-side redirection, should be replaced with actual auth status
+    localStorage.removeItem('userRole'); // Temporarily kept for client-side redirection, should be replaced with actual auth status
     setIsLoggedIn(false);
     setUserRole(null);
     router.push('/auth/login');

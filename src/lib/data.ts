@@ -1,24 +1,5 @@
 import type { Outlet, MenuItem, Order, UserProfile } from './types';
 
-export const outlets: Outlet[] = [
-  {
-    id: 'outlet-1',
-    name: 'Medical Cafeteria',
-    description: 'Serving healthy and delicious meals for everyone.',
-    imageId: 'outlet-medical-cafeteria',
-    isActive: true,
-    baseDeliveryTime: 15,
-  },
-  {
-    id: 'outlet-2',
-    name: 'Bits & Bites',
-    description: 'Quick snacks, sandwiches, and refreshing beverages.',
-    imageId: 'outlet-bits-bites',
-    isActive: true,
-    baseDeliveryTime: 10,
-  },
-];
-
 export const menuItems: MenuItem[] = [
   // Medical Cafeteria
   {

@@ -1,17 +1,17 @@
 
 'use client';
 
-import type { Order, OrderStatus } from '@/lib/types';
+import type { Order, OrderStatus, Outlet } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Clock, Tag, Hash, Utensils, User, Check, UtensilsCrossed, PartyPopper } from 'lucide-react';
-import { outlets } from '@/lib/data';
 import { cn } from '@/lib/utils';
 import { cva } from 'class-variance-authority';
 import { Button } from '@/components/ui/button';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { getOutletById } from '@/lib/firestore'; // Import getOutletById
 
 type OrderCardProps = {
   order: Order;
@@ -37,9 +37,19 @@ const statusVariants = cva('capitalize', {
 
 export default function OrderCard({ order: initialOrder, isStaffView = false, onStatusChange }: OrderCardProps) {
   const [order, setOrder] = useState(initialOrder);
+  const [outlet, setOutlet] = useState<Outlet | null>(null);
   const { toast } = useToast();
 
-  const outlet = outlets.find(o => o.id === order.outletId);
+  useEffect(() => {
+    const fetchOutlet = async () => {
+      if (order.outletId) {
+        const fetchedOutlet = await getOutletById(order.outletId);
+        setOutlet(fetchedOutlet);
+      }
+    };
+    fetchOutlet();
+  }, [order.outletId]);
+
   const timeAgo = Math.round((new Date().getTime() - new Date(order.createdAt).getTime()) / (1000 * 60));
 
   const handleStatusUpdate = (newStatus: OrderStatus) => {

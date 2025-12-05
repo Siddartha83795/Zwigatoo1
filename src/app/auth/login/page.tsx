@@ -2,7 +2,7 @@
 
 import { auth } from '@/lib/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -15,8 +15,9 @@ import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { outlets } from '@/lib/data';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { getOutlets } from '@/lib/firestore'; // Import getOutlets
+import type { Outlet } from '@/lib/types'; // Import Outlet type
 
 const clientSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address." }),
@@ -33,7 +34,33 @@ type StaffFormValues = z.infer<typeof staffSchema>;
 export default function LoginPage() {
     const { toast } = useToast();
     const router = useRouter();
-    const [selectedOutlet, setSelectedOutlet] = useState(outlets[0].id);
+    const [outlets, setOutlets] = useState<Outlet[]>([]);
+    const [selectedOutlet, setSelectedOutlet] = useState<string>("");
+    const [loadingOutlets, setLoadingOutlets] = useState(true);
+    const [errorOutlets, setErrorOutlets] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchOutlets = async () => {
+            try {
+                const fetchedOutlets = await getOutlets();
+                setOutlets(fetchedOutlets);
+                if (fetchedOutlets.length > 0) {
+                    setSelectedOutlet(fetchedOutlets[0].id); // Set first outlet as default
+                }
+            } catch (err: any) {
+                console.error("Error fetching outlets:", err);
+                setErrorOutlets("Failed to load outlets. Please try again later.");
+                toast({
+                    variant: "destructive",
+                    title: "Error",
+                    description: "Failed to load outlets. Please try again later.",
+                });
+            } finally {
+                setLoadingOutlets(false);
+            }
+        };
+        fetchOutlets();
+    }, [toast]);
 
     const clientForm = useForm<ClientFormValues>({
         resolver: zodResolver(clientSchema),
@@ -162,9 +189,15 @@ export default function LoginPage() {
                     <Label htmlFor="outlet">Select Outlet</Label>
                     <div className="relative">
                         <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Select value={selectedOutlet} onValueChange={setSelectedOutlet}>
+                        <Select value={selectedOutlet} onValueChange={setSelectedOutlet} disabled={loadingOutlets || !!errorOutlets}>
                             <SelectTrigger className="pl-10">
-                                <SelectValue placeholder="Select an outlet" />
+                                {loadingOutlets ? (
+                                    <SelectValue placeholder="Loading outlets..." />
+                                ) : errorOutlets ? (
+                                    <SelectValue placeholder={errorOutlets} />
+                                ) : (
+                                    <SelectValue placeholder="Select an outlet" />
+                                )}
                             </SelectTrigger>
                             <SelectContent>
                                 {outlets.map(outlet => (
