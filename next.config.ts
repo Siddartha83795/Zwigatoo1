@@ -1,6 +1,8 @@
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
+  output: 'export', // Required for GitHub Pages static export
+  basePath: '/dinehub-app-main', // Adjust to your repository name
   /* config options here */
   typescript: {
     ignoreBuildErrors: true,
