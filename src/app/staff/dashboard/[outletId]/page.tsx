@@ -1,13 +1,16 @@
+// app/staff/dashboard/[outletId]/staff-dashboard-client.tsx
 'use client';
 
-import { useState, useMemo } from 'react';
-import { outlets, orders as mockOrdersData } from '@/lib/data';
+import React, { useMemo, useState } from 'react';
 import OrderCard from '@/components/order-card';
-import type { Order, OrderStatus } from '@/lib/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import type { Order, OrderStatus } from '@/lib/types';
+import { outlets } from '@/lib/data';
 
 type Props = {
-  params: { outletId: string }; // plain params, not a Promise
+  outletId: string;
+  outletName: string;
+  initialOrders: Order[];
 };
 
 type StatusColumn = {
@@ -21,14 +24,15 @@ const columns: StatusColumn[] = [
   { title: 'Ready for Pickup', statuses: ['ready'] },
 ];
 
-export default function StaffDashboardPage({ params }: Props) {
-  const outletId = params.outletId;
+export default function StaffDashboardClient({ outletId, outletName, initialOrders }: Props) {
+  // Hooks are declared unconditionally at the top-level — ESLint happy.
+  const [orders, setOrders] = useState<Order[]>(() => initialOrders ?? []);
 
-  // find outlet (client-side)
+  // Optional: client-side outlet lookup (for display). Not required if you pass outletName.
   const outlet = useMemo(() => outlets.find((o) => o.id === outletId), [outletId]);
 
-  // If outlet not found, render a client-side 404 / message
   if (!outlet) {
+    // Fallback UI if somehow outlet is missing on client (server already handled notFound)
     return (
       <div className="container py-6">
         <h1 className="text-3xl font-bold">Outlet not found</h1>
@@ -37,12 +41,8 @@ export default function StaffDashboardPage({ params }: Props) {
     );
   }
 
-  const [orders, setOrders] = useState<Order[]>(
-    () => mockOrdersData.filter((o) => o.outletId === outletId) // init from mock
-  );
-
   const handleStatusChange = (orderId: string, newStatus: OrderStatus) => {
-    setOrders((prevOrders) => prevOrders.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o)));
+    setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o)));
   };
 
   const getOrdersForColumn = (statuses: OrderStatus[]) => orders.filter((o) => statuses.includes(o.status));
@@ -51,7 +51,7 @@ export default function StaffDashboardPage({ params }: Props) {
     <div className="h-[calc(100vh-4rem)] flex flex-col">
       <div className="container py-6 border-b">
         <h1 className="text-3xl font-bold font-headline">Staff Dashboard</h1>
-        <p className="text-muted-foreground">{outlet.name}</p>
+        <p className="text-muted-foreground">{outletName} (ID: {outletId})</p>
       </div>
 
       <div className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-6 overflow-hidden">
