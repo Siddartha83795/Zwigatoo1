@@ -13,6 +13,8 @@ import { getOutletById } from '@/lib/firestore'; // Import getOutletById
 import type { Outlet } from '@/lib/types'; // Import Outlet type
 
 
+import type { Outlet } from '@/lib/types'; // Import Outlet type
+
 export default function MenuPage({ params }: { params: any }) {
   const { setOutletId } = useCart();
   const [outlet, setOutlet] = useState<Outlet | null>(null);

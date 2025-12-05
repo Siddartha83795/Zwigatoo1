@@ -9,50 +9,21 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Minus, Plus, Trash2, Wand2, ArrowLeft, Loader2, Info } from 'lucide-react';
+import { Minus, Plus, Trash2, ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { predictWaitTime } from '@/app/actions';
-import type { PredictWaitTimeOutput } from '@/ai/flows/intelligent-wait-time-prediction';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import BackButton from '@/components/back-button';
 
 export default function CartPage() {
   const { cart, removeFromCart, updateQuantity, cartTotal, itemCount, outletId } = useCart();
   const router = useRouter();
-  const [prediction, setPrediction] = useState<PredictWaitTimeOutput | null>(null);
-  const [isPredicting, setIsPredicting] = useState(false);
-  const [predictionError, setPredictionError] = useState<string | null>(null);
 
   const handlePlaceOrder = () => {
     // Mock order placement
     const mockOrderData = {
       token: Math.floor(100 + Math.random() * 900),
-      eta: prediction?.estimatedWaitTime || Math.floor(15 + Math.random() * 10),
+      eta: Math.floor(15 + Math.random() * 10), // Use a random ETA as AI prediction is removed
     };
     router.push(`/order-confirmation?token=${mockOrderData.token}&eta=${mockOrderData.eta}`);
-  };
-  
-  const handlePredictWaitTime = async () => {
-    if (!outletId || cart.length === 0) return;
-    setIsPredicting(true);
-    setPredictionError(null);
-    setPrediction(null);
-    
-    const input = {
-      outletId,
-      itemIds: cart.flatMap(item => Array(item.quantity).fill(item.menuItem.id)),
-      orderTime: new Date().toISOString(),
-      queueDepth: Math.floor(Math.random() * 10), // Mocked queue depth
-    };
-
-    const result = await predictWaitTime(input);
-    if(result.success && result.data) {
-      setPrediction(result.data);
-    } else {
-      setPredictionError(result.error || 'An unknown error occurred.');
-    }
-    
-    setIsPredicting(false);
   };
 
 
