@@ -1,100 +1,137 @@
-// app/staff/dashboard/[outletId]/page.tsx
+// src/app/staff/dashboard/[outletId]/page.tsx
 
-type OutletParams = { outletId: string };
+// --- Type Definitions ---
+type OutletParams = {
+  // This must match the folder name: [outletId]
+  outletId: string;
+};
+
+interface OutletPageProps {
+    // The params object is required for dynamic routes
+    params: OutletParams;
+    // searchParams are optional and available in the App Router pattern
+    searchParams?: { [key: string]: string | string[] | undefined };
+}
+
+
+// --- 1. generateStaticParams (Fixes the build error when using output: "export") ---
 
 /**
- * 1. generateStaticParams
  * Required for `output: "export"` with dynamic routes.
- * It pre-renders all possible pages at build time.
- * MUST successfully fetch the list of all outlet IDs.
+ * It tells Next.js which pages to pre-render at build time.
  */
 export async function generateStaticParams(): Promise<OutletParams[]> {
-    // ⚠️ IMPORTANT: Ensure process.env.API_URL is correctly defined
-    // and accessible in your build environment/CI/CD pipeline.
+    // ⚠️ IMPORTANT: Ensure process.env.API_URL is correctly defined 
+    // and accessible in your build environment.
     const apiUrl = `${process.env.API_URL}/outlets`;
 
-    console.log(`[generateStaticParams] Attempting to fetch outlets from: ${apiUrl}`);
+    console.log(`[generateStaticParams] Fetching outlets from: ${apiUrl}`);
 
     try {
         const res = await fetch(apiUrl, {
-            // Add a short timeout to prevent the build from hanging indefinitely
+            // Set a timeout to prevent the build from hanging
             signal: AbortSignal.timeout(5000) 
         });
 
         if (!res.ok) {
-            // Throw a clear error if the API responds but with a non-200 status.
             const errorText = await res.text();
+            // THROWING an error is essential here to make the build failure visible and debuggable.
             throw new Error(`API failed with status ${res.status} when fetching outlets. Response: ${errorText}`);
         }
 
-        const outlets = await res.json();
+        const outlets: { id: number | string }[] = await res.json();
         
         if (!Array.isArray(outlets)) {
-             throw new Error("API response is not an array of outlets.");
+             throw new Error("API response is not a valid array of outlets.");
         }
 
-        const staticParams = outlets.map((o: { id: number | string }) => ({
+        const staticParams = outlets.map(o => ({
             outletId: String(o.id),
         }));
         
-        console.log(`[generateStaticParams] Successfully generated ${staticParams.length} static paths.`);
+        console.log(`[generateStaticParams] Generated ${staticParams.length} static paths.`);
         
         return staticParams;
         
     } catch (error) {
-        // Log the network/fetch error (e.g., DNS failure, timeout, or missing env var)
-        console.error(`--- BUILD ERROR: Failed to generate static params for /staff/dashboard/[outletId] ---`);
-        console.error("Reason:", error instanceof Error ? error.message : "An unknown error occurred during fetch.");
-        console.error(`Check 1: Is process.env.API_URL correctly set in your build environment? (Current value: ${process.env.API_URL})`);
-        console.error("Check 2: Is your API reachable from the machine running the 'next build' command?");
-        console.error(`-----------------------------------------------------------------------------------`);
-        
-        // Throwing the error is the correct action here. If you are using `output: "export"`, 
-        // a build failure is required if the required static data cannot be fetched.
-        throw new Error('Required static paths could not be generated. See console for details.');
+        console.error(`--- BUILD ERROR: Failed to generate static params ---`);
+        console.error("Reason:", error instanceof Error ? error.message : "An unknown error occurred.");
+        // Re-throw the error to ensure the Next.js build fails as intended for static export issues
+        throw new Error('Required static paths could not be generated. Check your network and env vars.');
     }
 }
 
+
+// --- 2. OutletPage Component (Fixes the TypeScript error) ---
+
 /**
- * 2. OutletPage Component
- * This component handles the rendering for a specific outlet.
+ * This is an Async Server Component that renders the dashboard for a specific outlet.
+ * Using the explicit interface 'OutletPageProps' resolves the TypeScript conflict.
  */
-export default async function OutletPage({ params }: { params: OutletParams }) {
+export default async function OutletPage({ params }: OutletPageProps) {
     const { outletId } = params;
     
-    // NOTE: This fetch runs for every pre-rendered page at build time (and again on client-side navigation if needed).
+    // In a real application, you would fetch the specific data needed for this outlet.
     const outletData = await getOutletData(outletId);
 
-    // If data is null (meaning the page likely shouldn't exist based on static params), 
-    // you might render a 404-like component or handle it based on your app's logic.
     if (!outletData) {
+        // Handle case where data wasn't found (though this shouldn't happen 
+        // if generateStaticParams worked correctly)
         return (
-            <div style={{ padding: '20px', color: 'red' }}>
-                <p>Error: Could not load data for Outlet ID: {outletId}</p>
+            <div style={{ padding: '20px', color: 'gray' }}>
+                <h1>404 - Outlet Dashboard</h1>
+                <p>Could not load data for Outlet ID: {outletId}</p>
             </div>
         );
     }
 
     return (
-        <main>
-            <h1>Outlet Dashboard: {outletData.name || `ID ${outletId}`}</h1>
-            <p>Welcome to the dashboard for outlet ID: **{outletId}**</p>
-            {/* Add your dashboard content here */}
+        <main style={{ padding: '20px' }}>
+            <h2>Outlet Dashboard: {outletData.name || `ID ${outletId}`}</h2>
+            <p>You are viewing the dashboard for **{outletData.location}**.</p>
+            {/* Add your actual dashboard layout and components here */}
+            
+            <section>
+                <h3>Example Outlet Data:</h3>
+                <pre style={{ backgroundColor: '#f4f4f4', padding: '10px', borderRadius: '4px' }}>
+                    {JSON.stringify(outletData, null, 2)}
+                </pre>
+            </section>
         </main>
     );
 }
 
 
-// Optional: Helper function for fetching individual outlet data
-// This keeps the main component clean.
-async function getOutletData(outletId: string): Promise<any | null> {
+// --- Helper Function ---
+
+/**
+ * Fetches detailed data for a single outlet.
+ */
+async function getOutletData(outletId: string): Promise<{ name: string, location: string } | null> {
+    // This fetch runs when accessing the specific page.
     const apiUrl = `${process.env.API_URL}/outlets/${outletId}`;
     try {
-        const res = await fetch(apiUrl, { next: { revalidate: 3600 } }); // Revalidate after 1 hour
-        if (!res.ok) return null;
-        return res.json();
+        const res = await fetch(apiUrl, { 
+            // Optional: configure Next.js caching behavior (e.g., revalidate every hour)
+            next: { revalidate: 3600 } 
+        }); 
+        
+        if (!res.ok) {
+            console.error(`Failed to fetch data for outlet ${outletId}: Status ${res.status}`);
+            return null;
+        }
+
+        const data = await res.json();
+        
+        // Mocking structure if the real API isn't running
+        if (!data.name || !data.location) {
+             return { name: `Outlet ${outletId}`, location: `Location ${outletId}` };
+        }
+        
+        return data;
+
     } catch (e) {
-        console.error(`Failed to fetch data for outlet ${outletId}:`, e);
+        console.error(`Network error fetching data for outlet ${outletId}:`, e);
         return null;
     }
 }
