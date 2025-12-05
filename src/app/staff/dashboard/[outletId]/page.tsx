@@ -1,92 +1,100 @@
-// app/staff/dashboard/[outletId]/staff-dashboard-client.tsx
-'use client';
+// app/staff/dashboard/[outletId]/page.tsx
 
-import React, { useMemo, useState } from 'react';
-import OrderCard from '@/components/order-card';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import type { Order, OrderStatus } from '@/lib/types';
-import { outlets } from '@/lib/data';
+type OutletParams = { outletId: string };
 
-type Props = {
-  outletId: string;
-  outletName: string;
-  initialOrders: Order[];
-};
+/**
+ * 1. generateStaticParams
+ * Required for `output: "export"` with dynamic routes.
+ * It pre-renders all possible pages at build time.
+ * MUST successfully fetch the list of all outlet IDs.
+ */
+export async function generateStaticParams(): Promise<OutletParams[]> {
+    // ⚠️ IMPORTANT: Ensure process.env.API_URL is correctly defined
+    // and accessible in your build environment/CI/CD pipeline.
+    const apiUrl = `${process.env.API_URL}/outlets`;
 
-type StatusColumn = {
-  title: string;
-  statuses: OrderStatus[];
-};
+    console.log(`[generateStaticParams] Attempting to fetch outlets from: ${apiUrl}`);
 
-const columns: StatusColumn[] = [
-  { title: 'New Orders', statuses: ['pending', 'accepted'] },
-  { title: 'In Preparation', statuses: ['preparing'] },
-  { title: 'Ready for Pickup', statuses: ['ready'] },
-];
+    try {
+        const res = await fetch(apiUrl, {
+            // Add a short timeout to prevent the build from hanging indefinitely
+            signal: AbortSignal.timeout(5000) 
+        });
 
-export default function StaffDashboardClient({ outletId, outletName, initialOrders }: Props) {
-  // Hooks are declared unconditionally at the top-level — ESLint happy.
-  const [orders, setOrders] = useState<Order[]>(() => initialOrders ?? []);
+        if (!res.ok) {
+            // Throw a clear error if the API responds but with a non-200 status.
+            const errorText = await res.text();
+            throw new Error(`API failed with status ${res.status} when fetching outlets. Response: ${errorText}`);
+        }
 
-  // Optional: client-side outlet lookup (for display). Not required if you pass outletName.
-  const outlet = useMemo(() => outlets.find((o) => o.id === outletId), [outletId]);
+        const outlets = await res.json();
+        
+        if (!Array.isArray(outlets)) {
+             throw new Error("API response is not an array of outlets.");
+        }
 
-  if (!outlet) {
-    // Fallback UI if somehow outlet is missing on client (server already handled notFound)
+        const staticParams = outlets.map((o: { id: number | string }) => ({
+            outletId: String(o.id),
+        }));
+        
+        console.log(`[generateStaticParams] Successfully generated ${staticParams.length} static paths.`);
+        
+        return staticParams;
+        
+    } catch (error) {
+        // Log the network/fetch error (e.g., DNS failure, timeout, or missing env var)
+        console.error(`--- BUILD ERROR: Failed to generate static params for /staff/dashboard/[outletId] ---`);
+        console.error("Reason:", error instanceof Error ? error.message : "An unknown error occurred during fetch.");
+        console.error(`Check 1: Is process.env.API_URL correctly set in your build environment? (Current value: ${process.env.API_URL})`);
+        console.error("Check 2: Is your API reachable from the machine running the 'next build' command?");
+        console.error(`-----------------------------------------------------------------------------------`);
+        
+        // Throwing the error is the correct action here. If you are using `output: "export"`, 
+        // a build failure is required if the required static data cannot be fetched.
+        throw new Error('Required static paths could not be generated. See console for details.');
+    }
+}
+
+/**
+ * 2. OutletPage Component
+ * This component handles the rendering for a specific outlet.
+ */
+export default async function OutletPage({ params }: { params: OutletParams }) {
+    const { outletId } = params;
+    
+    // NOTE: This fetch runs for every pre-rendered page at build time (and again on client-side navigation if needed).
+    const outletData = await getOutletData(outletId);
+
+    // If data is null (meaning the page likely shouldn't exist based on static params), 
+    // you might render a 404-like component or handle it based on your app's logic.
+    if (!outletData) {
+        return (
+            <div style={{ padding: '20px', color: 'red' }}>
+                <p>Error: Could not load data for Outlet ID: {outletId}</p>
+            </div>
+        );
+    }
+
     return (
-      <div className="container py-6">
-        <h1 className="text-3xl font-bold">Outlet not found</h1>
-        <p className="text-muted-foreground">No outlet with id: {outletId}</p>
-      </div>
+        <main>
+            <h1>Outlet Dashboard: {outletData.name || `ID ${outletId}`}</h1>
+            <p>Welcome to the dashboard for outlet ID: **{outletId}**</p>
+            {/* Add your dashboard content here */}
+        </main>
     );
-  }
+}
 
-  const handleStatusChange = (orderId: string, newStatus: OrderStatus) => {
-    setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o)));
-  };
 
-  const getOrdersForColumn = (statuses: OrderStatus[]) => orders.filter((o) => statuses.includes(o.status));
-
-  return (
-    <div className="h-[calc(100vh-4rem)] flex flex-col">
-      <div className="container py-6 border-b">
-        <h1 className="text-3xl font-bold font-headline">Staff Dashboard</h1>
-        <p className="text-muted-foreground">{outletName} (ID: {outletId})</p>
-      </div>
-
-      <div className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-6 overflow-hidden">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-full">
-          {columns.map((col) => {
-            const columnOrders = getOrdersForColumn(col.statuses);
-            return (
-              <div key={col.title} className="bg-card rounded-lg flex flex-col h-full overflow-hidden">
-                <h2 className="text-lg font-semibold p-4 border-b font-headline">
-                  {col.title} ({columnOrders.length})
-                </h2>
-
-                <ScrollArea className="flex-grow p-4">
-                  <div className="space-y-4">
-                    {columnOrders.length > 0 ? (
-                      columnOrders.map((order) => (
-                        <OrderCard
-                          key={order.id}
-                          order={order}
-                          isStaffView={true}
-                          onStatusChange={handleStatusChange}
-                        />
-                      ))
-                    ) : (
-                      <div className="text-center text-muted-foreground py-16">
-                        <p>No orders in this category.</p>
-                      </div>
-                    )}
-                  </div>
-                </ScrollArea>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
+// Optional: Helper function for fetching individual outlet data
+// This keeps the main component clean.
+async function getOutletData(outletId: string): Promise<any | null> {
+    const apiUrl = `${process.env.API_URL}/outlets/${outletId}`;
+    try {
+        const res = await fetch(apiUrl, { next: { revalidate: 3600 } }); // Revalidate after 1 hour
+        if (!res.ok) return null;
+        return res.json();
+    } catch (e) {
+        console.error(`Failed to fetch data for outlet ${outletId}:`, e);
+        return null;
+    }
 }
