@@ -32,7 +32,7 @@ jobs:
       - name: Build with Next.js
           run: ${{ steps.detect-package-manager.outputs.runner }} next build
           env:
-            API_URL: 'https://your-live-api-endpoint.com/api' # <--- ADD THIS LINE
+            API_URL: 'https://http://localhost:3000/api' # <--- ADD THIS LINE
         # ... rest of the steps ...
       - name: Checkout
         uses: actions/checkout@v4
