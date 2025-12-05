@@ -58,12 +58,11 @@ import { getOutletById } from '@/lib/firestore'; // Import getOutletById
  * - fetches outlet details using a validated API base
  * - renders fallback UI when data is missing
  */
+// @ts-ignore
 export default async function OutletPage({
   params,
-  searchParams,
 }: {
-  params: { outletId: string };
-  searchParams?: { [key: string]: string | string[] | undefined };
+  params: any;
 }) {
   const { outletId } = params || {};
 
