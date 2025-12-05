@@ -1,5 +1,7 @@
 'use client';
 
+import { auth } from '@/lib/firebase';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,13 +20,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 const clientSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address." }),
-  phone: z.string().regex(/^\+91\d{10}$/, { message: "Phone number must be in the format +91XXXXXXXXXX and have 10 digits." }),
+  password: z.string().min(6, { message: "Password must be at least 6 characters." }), // Firebase requires min 6 chars
 });
 type ClientFormValues = z.infer<typeof clientSchema>;
 
 const staffSchema = z.object({
-  username: z.string().min(1, { message: "Username is required." }),
-  password: z.string().min(1, { message: "Password is required." }),
+  email: z.string().email({ message: "Please enter a valid email address." }),
+  password: z.string().min(6, { message: "Password must be at least 6 characters." }), // Firebase requires min 6 chars
 });
 type StaffFormValues = z.infer<typeof staffSchema>;
 
@@ -38,42 +40,51 @@ export default function LoginPage() {
         mode: "onTouched",
         defaultValues: {
             email: "",
-            phone:   "" },
+            password: "",
+        },
     });
 
     const staffForm = useForm<StaffFormValues>({
         resolver: zodResolver(staffSchema),
         defaultValues: {
-            username: 'admin',
-            password: 'admin123',
+            email: '',
+            password: '',
         },
     });
 
-    const onClientSubmit: SubmitHandler<ClientFormValues> = (data) => {
-        console.log("Client Login Data:", data);
-        localStorage.setItem('isLoggedIn', 'true');
-        localStorage.setItem('userRole', 'client');
-        toast({
-            title: "Client Login Successful",
-            description: "Welcome back!",
-        });
-        router.push('/outlets');
+    const onClientSubmit: SubmitHandler<ClientFormValues> = async (data) => {
+        try {
+            await signInWithEmailAndPassword(auth, data.email, data.password);
+            toast({
+                title: "Client Login Successful",
+                description: "Welcome back!",
+            });
+            router.push('/outlets');
+        } catch (error: any) {
+            console.error("Firebase Auth error:", error);
+            toast({
+                variant: "destructive",
+                title: "Login Failed",
+                description: error.message || "An unexpected error occurred. Please try again.",
+            });
+        }
     };
 
-    const onStaffSubmit: SubmitHandler<StaffFormValues> = (data) => {
-        if (data.username === 'admin' && data.password === 'admin123') {
-            localStorage.setItem('isLoggedIn', 'true');
-            localStorage.setItem('userRole', 'staff');
+    const onStaffSubmit: SubmitHandler<StaffFormValues> = async (data) => {
+        try {
+            await signInWithEmailAndPassword(auth, data.email, data.password);
+            // Firebase Auth successfully signs in, no need for localStorage for session
             toast({
                 title: "Staff Login Successful",
                 description: "Redirecting to dashboard...",
             });
             router.push(`/staff/dashboard/${selectedOutlet}`);
-        } else {
+        } catch (error: any) {
+            console.error("Firebase Auth error:", error);
             toast({
                 variant: "destructive",
                 title: "Login Failed",
-                description: "Invalid username or password.",
+                description: error.message || "An unexpected error occurred. Please try again.",
             });
         }
     };
@@ -114,17 +125,17 @@ export default function LoginPage() {
                   />
                   <FormField
                     control={clientForm.control}
-                    name="phone"
+                    name="password"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Phone Number</FormLabel>
+                        <FormLabel>Password</FormLabel>
                         <div className="relative">
-                          <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          <FormControl>
-                            <Input type="tel" placeholder="+91XXXXXXXXXX" {...field} className="pl-10" />
+                           <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                           <FormControl>
+                            <Input type="password" placeholder="••••••••" {...field} className="pl-10"/>
                           </FormControl>
                         </div>
-                         <FormMessage />
+                        <FormMessage />
                       </FormItem>
                     )}
                   />
@@ -165,14 +176,14 @@ export default function LoginPage() {
                   </div>
                   <FormField
                     control={staffForm.control}
-                    name="username"
+                    name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Username</FormLabel>
+                        <FormLabel>Email Address</FormLabel>
                         <div className="relative">
-                           <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                           <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                            <FormControl>
-                            <Input placeholder="admin" {...field} className="pl-10"/>
+                            <Input placeholder="staff@example.com" {...field} className="pl-10"/>
                           </FormControl>
                         </div>
                         <FormMessage />

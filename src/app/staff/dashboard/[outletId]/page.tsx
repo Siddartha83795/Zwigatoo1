@@ -58,9 +58,10 @@
  */
 export default async function OutletPage({
   params,
-  // searchParams optional
+  searchParams,
 }: {
-  params: any;
+  params: { outletId: string };
+  searchParams?: { [key: string]: string | string[] | undefined };
 }) {
   const { outletId } = params || {};
 
