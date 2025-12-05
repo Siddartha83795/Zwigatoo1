@@ -1,7 +1,6 @@
-// src/lib/firebase.ts
-import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
+import { getAuth, Auth } from 'firebase/auth';
+import { getFirestore, Firestore } from 'firebase/firestore';
 
 // Firebase configuration
 const firebaseConfig = {
@@ -15,7 +14,7 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-let app;
+let app: FirebaseApp | undefined;
 if (typeof window !== 'undefined' && !getApps().length) {
   app = initializeApp(firebaseConfig);
 } else if (getApps().length) {
@@ -31,8 +30,8 @@ if (typeof window !== 'undefined' && !getApps().length) {
 }
 
 // Export Firebase services (conditionally initialize auth and db)
-let auth = null;
-let db = null;
+let auth: Auth | null = null;
+let db: Firestore | null = null;
 
 if (app) {
   auth = getAuth(app);

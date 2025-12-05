@@ -80,6 +80,14 @@ export default function LoginPage() {
     });
 
     const onClientSubmit: SubmitHandler<ClientFormValues> = async (data) => {
+        if (!auth) {
+            toast({
+                variant: "destructive",
+                title: "Authentication Error",
+                description: "Firebase authentication is not available in this environment. Please try again in the browser.",
+            });
+            return;
+        }
         try {
             await signInWithEmailAndPassword(auth, data.email, data.password);
             toast({
@@ -98,6 +106,14 @@ export default function LoginPage() {
     };
 
     const onStaffSubmit: SubmitHandler<StaffFormValues> = async (data) => {
+        if (!auth) {
+            toast({
+                variant: "destructive",
+                title: "Authentication Error",
+                description: "Firebase authentication is not available in this environment. Please try again in the browser.",
+            });
+            return;
+        }
         try {
             await signInWithEmailAndPassword(auth, data.email, data.password);
             // Firebase Auth successfully signs in, no need for localStorage for session
